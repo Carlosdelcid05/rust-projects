@@ -1,0 +1,10 @@
+/home/carlos/Escritorio/Rust-Proyectos/rust-projects/hello_world/target/debug/deps/gear_dlmalloc-9dc7fb0288390193.d: /home/carlos/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/gear-dlmalloc-0.2.1/src/lib.rs /home/carlos/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/gear-dlmalloc-0.2.1/src/common.rs /home/carlos/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/gear-dlmalloc-0.2.1/src/dlmalloc.rs /home/carlos/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/gear-dlmalloc-0.2.1/src/dlverbose.rs /home/carlos/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/gear-dlmalloc-0.2.1/src/global.rs /home/carlos/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/gear-dlmalloc-0.2.1/src/linux.rs
+
+/home/carlos/Escritorio/Rust-Proyectos/rust-projects/hello_world/target/debug/deps/libgear_dlmalloc-9dc7fb0288390193.rmeta: /home/carlos/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/gear-dlmalloc-0.2.1/src/lib.rs /home/carlos/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/gear-dlmalloc-0.2.1/src/common.rs /home/carlos/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/gear-dlmalloc-0.2.1/src/dlmalloc.rs /home/carlos/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/gear-dlmalloc-0.2.1/src/dlverbose.rs /home/carlos/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/gear-dlmalloc-0.2.1/src/global.rs /home/carlos/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/gear-dlmalloc-0.2.1/src/linux.rs
+
+/home/carlos/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/gear-dlmalloc-0.2.1/src/lib.rs:
+/home/carlos/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/gear-dlmalloc-0.2.1/src/common.rs:
+/home/carlos/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/gear-dlmalloc-0.2.1/src/dlmalloc.rs:
+/home/carlos/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/gear-dlmalloc-0.2.1/src/dlverbose.rs:
+/home/carlos/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/gear-dlmalloc-0.2.1/src/global.rs:
+/home/carlos/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/gear-dlmalloc-0.2.1/src/linux.rs:
