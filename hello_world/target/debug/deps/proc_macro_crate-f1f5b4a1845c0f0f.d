@@ -1,7 +1,0 @@
-/home/carlos/Escritorio/Rust-Proyectos/rust-projects/hello_world/target/debug/deps/proc_macro_crate-f1f5b4a1845c0f0f.d: /home/carlos/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/proc-macro-crate-3.5.0/src/lib.rs
-
-/home/carlos/Escritorio/Rust-Proyectos/rust-projects/hello_world/target/debug/deps/libproc_macro_crate-f1f5b4a1845c0f0f.rlib: /home/carlos/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/proc-macro-crate-3.5.0/src/lib.rs
-
-/home/carlos/Escritorio/Rust-Proyectos/rust-projects/hello_world/target/debug/deps/libproc_macro_crate-f1f5b4a1845c0f0f.rmeta: /home/carlos/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/proc-macro-crate-3.5.0/src/lib.rs
-
-/home/carlos/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/proc-macro-crate-3.5.0/src/lib.rs:
