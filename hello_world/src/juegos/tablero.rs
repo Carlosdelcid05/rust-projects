@@ -25,9 +25,6 @@ pub fn tablero() {
     // Oculta el cursor para que no parpadee
     execute!(stdout, cursor::Hide).unwrap();
 
-    let mut x: usize = 12;
-    let mut y: usize = 12;
-
     // Contador para controlar velocidad del proyectil
     let mut tick: u32 = 0;
 
@@ -36,6 +33,12 @@ pub fn tablero() {
         // poll() pregunta "¿hay tecla presionada?" y retorna inmediatamente
         if poll(Duration::from_millis(0)).unwrap() {
             if let Event::Key(key) = event::read().unwrap() {
+                if estado.explosion_jugador_tick > 0 {
+                    if key.code == KeyCode::Char('q') {
+                        break;
+                    }
+                    continue;
+                }
                 match key.code {
                     KeyCode::Char('q') => break,             // salir
                     KeyCode::Char('c') => estado.disparar(), // ← DISPARAR
@@ -62,7 +65,9 @@ pub fn tablero() {
         if tick % 6 == 0 {
             estado.actualizar_proyectiles();
             estado.actualizar_enemigos();
+            estado.verificar_colision_jugador();
             estado.verificar_colisiones();
+            estado.actualizar_explosiones();
         }
         if tick % 3 == 0 {
             // ← más lento que los proyectiles
@@ -97,8 +102,7 @@ fn dibujar_galaga(
     print!("\x1B[2J\x1B[1;1H");
     for y in 0..ALTO {
         for x in 0..ANCHO {
-            // Calcula qué columna del "mundo" corresponde a esta celda
-            // Las estrellas se mueven hacia la derecha → el mundo se desplaza a la izquierda
+            // Calcula qué columna del mundo corresponde a esta celda
             let x_mundo = (x + estado.offset) % ANCHO;
 
             let hay_estrella = estado
@@ -120,6 +124,13 @@ fn dibujar_galaga(
         }
         println!();
     }
-    print!("Muevete con flechas, Q para salir");
+    if estado.jugador_activo {
+        print!(
+            "Vidas: {} | Flechas mover, C disparar, Q salir   ",
+            estado.vidas
+        );
+    } else {
+        print!("GAME OVER - Pulsa Q para salir                 ");
+    }
     stdout.flush().unwrap();
 }

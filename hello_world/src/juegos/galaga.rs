@@ -12,24 +12,29 @@ pub struct Enemigo {
     pub y: usize,
     pub activo: bool,
     pub tipo: u8,
-    pub dir: i32,           // ← dirección vertical: 1 = abajo, -1 = arriba
-    pub en_formacion: bool, // ← true = moviéndose en grupo, false = dive bomb
+    pub dir: i32,
+    pub en_formacion: bool,
+    pub explosion_tick: u8,
 }
 
 pub struct EstadoJuego {
     pub px: usize,
     pub py: usize,
     pub proyectiles: Vec<Proyectil>,
-    pub enemigos: Vec<Enemigo>, // ← nuevo
+    pub enemigos: Vec<Enemigo>,
     pub estrellas: Vec<(usize, usize)>,
     pub offset: usize,
+    pub vidas: u8,
+    pub jugador_activo: bool,
+    pub invulnerable_ticks: u32,
+    pub explosion_jugador_tick: u8,
 }
 
 impl EstadoJuego {
     pub fn new() -> Self {
         // Genera estrellas en posiciones aleatorias al inicio
         let mut estrellas = Vec::new();
-        let mut rng = rand::rng(); // Initialize the RNG locally
+
         let mut rng = rand::rng();
         for _ in 0..40 {
             let x = rng.random_range(0..ANCHO);
@@ -44,6 +49,7 @@ impl EstadoJuego {
                 tipo: 1,
                 dir: 1,
                 en_formacion: true,
+                explosion_tick: 0,
             },
             Enemigo {
                 x: 18,
@@ -52,6 +58,7 @@ impl EstadoJuego {
                 tipo: 1,
                 dir: 1,
                 en_formacion: true,
+                explosion_tick: 0,
             },
             Enemigo {
                 x: 18,
@@ -60,6 +67,7 @@ impl EstadoJuego {
                 tipo: 1,
                 dir: 1,
                 en_formacion: true,
+                explosion_tick: 0,
             },
         ];
 
@@ -67,12 +75,106 @@ impl EstadoJuego {
             px: 12,
             py: 12,
             proyectiles: Vec::new(),
-            enemigos, // ← ahora sí tiene los enemigos
+            enemigos,
             estrellas,
             offset: 0,
+            vidas: 3,
+            jugador_activo: true,
+            invulnerable_ticks: 0,
+            explosion_jugador_tick: 0,
         }
     }
 
+    pub fn verificar_colision_jugador(&mut self) {
+        if self.invulnerable_ticks > 0 {
+            self.invulnerable_ticks = self.invulnerable_ticks.saturating_sub(1);
+            return;
+        }
+        if !self.jugador_activo || self.explosion_jugador_tick > 0 {
+            return;
+        }
+
+        let jugador = ["110", "011", "110"];
+        let enemigo_1 = ["033", "330", "033"];
+
+        let celdas_jugador = EstadoJuego::celdas_sprite(&jugador, self.px, self.py, '1');
+
+        for enemigo in self.enemigos.iter_mut() {
+            if !enemigo.activo || enemigo.explosion_tick > 0 {
+                continue;
+            }
+
+            for (dy, fila) in enemigo_1.iter().enumerate() {
+                for (dx, c) in fila.chars().enumerate() {
+                    if c != '3' {
+                        continue;
+                    }
+                    let ey = enemigo.y + dy;
+                    let ex = enemigo.x + dx;
+
+                    if celdas_jugador.contains(&(ey, ex)) {
+                        enemigo.explosion_tick = 1;
+                        self.explosion_jugador_tick = 1;
+                        return;
+                    }
+                }
+            }
+        }
+    }
+    pub fn actualizar_explosiones(&mut self) {
+        // 1. Actualizar enemigos
+        for enemigo in self.enemigos.iter_mut() {
+            if enemigo.explosion_tick > 0 {
+                enemigo.explosion_tick += 1;
+                // Si llega a 4 ticks (2 frames de animación), se elimina
+                if enemigo.explosion_tick > 4 {
+                    enemigo.activo = false;
+                }
+            }
+        }
+        self.enemigos.retain(|e| e.activo);
+
+        // 2. Actualizar jugador
+        if self.explosion_jugador_tick > 0 {
+            self.explosion_jugador_tick += 1;
+
+            if self.explosion_jugador_tick > 4 {
+                self.explosion_jugador_tick = 0; // Termina animación
+
+                // Aplicar penalización ahora
+                self.vidas = self.vidas.saturating_sub(1);
+                if self.vidas == 0 {
+                    self.jugador_activo = false; // GAME OVER
+                } else {
+                    // Respawn
+                    self.px = ANCHO / 2;
+                    self.py = ALTO / 2;
+                    self.invulnerable_ticks = 30;
+                }
+            }
+        }
+    }
+
+    fn celdas_sprite(sprite: &[&str], cx: usize, cy: usize, caracter: char) -> Vec<(usize, usize)> {
+        let alto = sprite.len();
+        let ancho = sprite[0].len();
+        let origen_y = cy.saturating_sub(alto / 2);
+        let origen_x = cx.saturating_sub(ancho / 2);
+
+        let mut celdas = Vec::new();
+        for (dy, fila) in sprite.iter().enumerate() {
+            for (dx, c) in fila.chars().enumerate() {
+                if c == caracter {
+                    let ty = origen_y + dy;
+                    let tx = origen_x + dx;
+                    if ty < ALTO && tx < ANCHO {
+                        celdas.push((ty, tx));
+                    }
+                }
+            }
+        }
+        celdas
+    }
     // Llama esto en el loop igual que actualizar_proyectiles()
     pub fn actualizar_estrellas(&mut self) {
         self.offset = (self.offset + 1) % ANCHO;
@@ -85,6 +187,9 @@ impl EstadoJuego {
 
         for enemigo in self.enemigos.iter_mut() {
             if !enemigo.activo {
+                continue;
+            }
+            if enemigo.explosion_tick > 0 {
                 continue;
             }
 
@@ -137,37 +242,75 @@ impl EstadoJuego {
 
         let proyectil_1_enemigo = ["4"];
 
-        //Estampar al enemigo 1
+        // Estampar enemigos (normales o explosión)
+        let enemigo_1 = ["033", "330", "033"];
+        let enemigo_1_explosion_1 = ["333", "333", "333"];
+        let enemigo_1_explosion_2 = ["000", "030", "000"];
+
         for enemigo in estado.enemigos.iter() {
             if !enemigo.activo {
                 continue;
             }
-            for (dy, fila) in enemigo_1.iter().enumerate() {
+
+            // Seleccionar sprite según el tick de explosión
+            let sprite = if enemigo.explosion_tick > 0 {
+                if enemigo.explosion_tick <= 2 {
+                    &enemigo_1_explosion_1
+                } else {
+                    &enemigo_1_explosion_2
+                }
+            } else {
+                &enemigo_1
+            };
+
+            for (dy, fila) in sprite.iter().enumerate() {
                 for (dx, c) in fila.chars().enumerate() {
                     if c == '3' {
                         let ty = enemigo.y + dy;
                         let tx = enemigo.x + dx;
                         if ty < ALTO && tx < ANCHO {
-                            tablero_estados[ty][tx] = 3;
+                            // Si está explotando, usamos el ID 5 para pintarlo distinto
+                            tablero_estados[ty][tx] =
+                                if enemigo.explosion_tick > 0 { 5 } else { 3 };
                         }
                     }
                 }
             }
         }
 
-        // Estampar jugador centrado en (px, py)
-        let sprite_alto = jugador.len();
-        let sprite_ancho = jugador[0].len();
-        let origen_y = py.saturating_sub(sprite_alto / 2);
-        let origen_x = px.saturating_sub(sprite_ancho / 2);
+        // Estampar jugador (normal, explosión o nada)
+        let jugador = ["110", "011", "110"];
+        let jugador_explosion_1 = ["111", "111", "111"];
+        let jugador_explosion_2 = ["000", "010", "000"];
 
-        for (dy, fila) in jugador.iter().enumerate() {
-            for (dx, c) in fila.chars().enumerate() {
-                let ty = origen_y + dy;
-                let tx = origen_x + dx;
-                // Verificar que no salgamos del tablero
-                if ty < ALTO && tx < ANCHO && c == '1' {
-                    tablero_estados[ty][tx] = 1;
+        if estado.jugador_activo {
+            let sprite = if estado.explosion_jugador_tick > 0 {
+                if estado.explosion_jugador_tick <= 2 {
+                    &jugador_explosion_1
+                } else {
+                    &jugador_explosion_2
+                }
+            } else {
+                &jugador
+            };
+
+            let sprite_alto = sprite.len();
+            let sprite_ancho = sprite[0].len();
+            let origen_y = py.saturating_sub(sprite_alto / 2);
+            let origen_x = px.saturating_sub(sprite_ancho / 2);
+
+            for (dy, fila) in sprite.iter().enumerate() {
+                for (dx, c) in fila.chars().enumerate() {
+                    let ty = origen_y + dy;
+                    let tx = origen_x + dx;
+                    if ty < ALTO && tx < ANCHO && c == '1' {
+                        // Si está explotando, usamos el ID 6
+                        tablero_estados[ty][tx] = if estado.explosion_jugador_tick > 0 {
+                            6
+                        } else {
+                            1
+                        };
+                    }
                 }
             }
         }
@@ -199,14 +342,14 @@ impl EstadoJuego {
     pub fn actualizar_proyectiles(&mut self) {
         for p in self.proyectiles.iter_mut() {
             if p.activo {
-                if p.x == 0 {
-                    p.activo = false; // salió del tablero
+                // Se elimina si llega al borde derecho
+                if p.x >= ANCHO - 1 {
+                    p.activo = false;
                 } else {
                     p.x += 1;
                 }
             }
         }
-        // Elimina proyectiles inactivos para no acumular memoria
         self.proyectiles.retain(|p| p.activo);
     }
 
@@ -219,7 +362,8 @@ impl EstadoJuego {
             }
 
             for enemigo in self.enemigos.iter_mut() {
-                if !enemigo.activo {
+                // Ignorar enemigos inactivos o que ya están explotando
+                if !enemigo.activo || enemigo.explosion_tick > 0 {
                     continue;
                 }
 
@@ -240,14 +384,14 @@ impl EstadoJuego {
                 }
 
                 if hubo_colision {
-                    proyectil.activo = false;
-                    enemigo.activo = false;
+                    proyectil.activo = false; // El proyectil desaparece
+                    enemigo.explosion_tick = 1; // ¡Inicia la animación de explosión!
+                    // Ya NO ponemos enemigo.activo = false aquí
                 }
             }
         }
 
-        // Limpiar inactivos
+        // Limpiamos los proyectiles inactivos, pero NO los enemigos todavía
         self.proyectiles.retain(|p| p.activo);
-        self.enemigos.retain(|e| e.activo);
     }
 }
