@@ -59,8 +59,14 @@ pub fn tablero() {
         }
 
         tick += 1;
-        if tick % 3 == 0 {
+        if tick % 6 == 0 {
             estado.actualizar_proyectiles();
+            estado.actualizar_enemigos();
+            estado.verificar_colisiones();
+        }
+        if tick % 3 == 0 {
+            // ← más lento que los proyectiles
+            estado.actualizar_estrellas();
         }
         // Limpiar estado del frame anterior
         *tablero_estados = [[0u8; ANCHO]; ALTO];
@@ -68,9 +74,9 @@ pub fn tablero() {
         // Estampar todos los objetos con sus posiciones actuales
         EstadoJuego::galaga(tablero_estados, estado.px, estado.py, &estado);
 
-        // Dibujar
+        // dibujar_galaga
         execute!(stdout, cursor::MoveTo(0, 0)).unwrap();
-        dibujar(&mut stdout, tablero_estados);
+        dibujar_galaga(&mut stdout, tablero_estados, &estado);
 
         // ── Controlar FPS ────────────────────────────────────
         std::thread::sleep(Duration::from_millis(1000 / 30));
@@ -81,17 +87,35 @@ pub fn tablero() {
     execute!(stdout, cursor::Show).unwrap();
 }
 
-fn dibujar(stdout: &mut io::Stdout, tablero_estados: &[[u8; ANCHO]; ALTO]) {
+fn dibujar_galaga(
+    stdout: &mut io::Stdout,
+    tablero_estados: &[[u8; ANCHO]; ALTO],
+    estado: &EstadoJuego,
+) {
     let tablero = *tablero_estados; // ya tiene todo estampado
 
     print!("\x1B[2J\x1B[1;1H");
     for y in 0..ALTO {
         for x in 0..ANCHO {
+            // Calcula qué columna del "mundo" corresponde a esta celda
+            // Las estrellas se mueven hacia la derecha → el mundo se desplaza a la izquierda
+            let x_mundo = (x + estado.offset) % ANCHO;
+
+            let hay_estrella = estado
+                .estrellas
+                .iter()
+                .any(|&(ex, ey)| ex == x_mundo && ey == y);
             match tablero[y][x] {
                 1 => print!("@   "),
                 2 => print!(">   "),
                 3 => print!("#   "),
-                _ => print!(".   "),
+                _ => {
+                    if hay_estrella {
+                        print!("*   ")
+                    } else {
+                        print!("    ")
+                    }
+                }
             }
         }
         println!();
