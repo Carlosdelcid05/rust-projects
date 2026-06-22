@@ -1,9 +1,15 @@
 mod juegos;
 
-use juegos::tablero::TABLERO_ESTADOS;
-use juegos::tablero::tablero;
+use juegos::menu;
 
 fn main() {
-    //definir_plano();
-    tablero();
+    // Bucle del menú principal: tras terminar una partida volvemos a mostrar
+    // el menú, salvo que el usuario haya elegido "Salir".
+    loop {
+        let opcion = menu::mostrar_menu();
+        let continuar = menu::lanzador(opcion);
+        if !continuar {
+            break;
+        }
+    }
 }

@@ -1,5 +1,13 @@
-use super::tablero::{ALTO, ANCHO};
+//! Galaga — juego de naves.
+//!
+//! Toda la lógica de colisiones, explosiones, proyectiles y enemigos
+//! se mantiene intacta. Lo único que se añade es la implementación del
+//! trait [`Juego`] para que el bucle principal genérico pueda ejecutarlo.
+
+use super::juego::{ALTO, ANCHO, Juego};
+use crossterm::event::KeyCode;
 use rand::RngExt;
+use std::io::{self, Write};
 
 pub struct Proyectil {
     pub x: usize,
@@ -28,6 +36,8 @@ pub struct EstadoJuego {
     pub jugador_activo: bool,
     pub invulnerable_ticks: u32,
     pub explosion_jugador_tick: u8,
+    /// `true` cuando el usuario ha presionado 'Q' y quiere salir.
+    pub salir: bool,
 }
 
 impl EstadoJuego {
@@ -82,6 +92,7 @@ impl EstadoJuego {
             jugador_activo: true,
             invulnerable_ticks: 0,
             explosion_jugador_tick: 0,
+            salir: false,
         }
     }
 
@@ -121,6 +132,7 @@ impl EstadoJuego {
             }
         }
     }
+
     pub fn actualizar_explosiones(&mut self) {
         // 1. Actualizar enemigos
         for enemigo in self.enemigos.iter_mut() {
@@ -175,6 +187,7 @@ impl EstadoJuego {
         }
         celdas
     }
+
     // Llama esto en el loop igual que actualizar_proyectiles()
     pub fn actualizar_estrellas(&mut self) {
         self.offset = (self.offset + 1) % ANCHO;
@@ -219,16 +232,11 @@ impl EstadoJuego {
         }
     }
 
-    pub fn galaga(
-        tablero_estados: &mut [[u8; ANCHO]; ALTO],
-        px: usize,
-        py: usize,
-        estado: &EstadoJuego,
-    ) {
+    /// Estampa todos los sprites (enemigos, jugador, proyectiles) en
+    /// `tablero_estados`. Es la "capa de modelo → buffer de render".
+    pub fn galaga(&self, tablero_estados: &mut [[u8; ANCHO]; ALTO], px: usize, py: usize) {
         //0 = vacio (.   ), 1 = jugador (@   ), 2 = proyectil (>   ), 3 = enemigo (#   ), 4 = proyectil_enemigo (<   )
         let enemigo_1 = ["033", "330", "033"];
-        let enemigo_2 = ["00033", "00333", "03333", "00333", "000333"];
-
         let enemigo_1_explosion_1 = ["333", "333", "333"];
         let enemigo_1_explosion_2 = ["000", "030", "000"];
 
@@ -237,17 +245,9 @@ impl EstadoJuego {
         let jugador_explosion_2 = ["000", "010", "000"];
 
         let proyectil_1 = ["2"];
-        let proyectil_2 = ["22", "22"];
-        let proyectil_3 = ["200", "020", "200"];
-
-        let proyectil_1_enemigo = ["4"];
 
         // Estampar enemigos (normales o explosión)
-        let enemigo_1 = ["033", "330", "033"];
-        let enemigo_1_explosion_1 = ["333", "333", "333"];
-        let enemigo_1_explosion_2 = ["000", "030", "000"];
-
-        for enemigo in estado.enemigos.iter() {
+        for enemigo in self.enemigos.iter() {
             if !enemigo.activo {
                 continue;
             }
@@ -279,13 +279,9 @@ impl EstadoJuego {
         }
 
         // Estampar jugador (normal, explosión o nada)
-        let jugador = ["110", "011", "110"];
-        let jugador_explosion_1 = ["111", "111", "111"];
-        let jugador_explosion_2 = ["000", "010", "000"];
-
-        if estado.jugador_activo {
-            let sprite = if estado.explosion_jugador_tick > 0 {
-                if estado.explosion_jugador_tick <= 2 {
+        if self.jugador_activo {
+            let sprite = if self.explosion_jugador_tick > 0 {
+                if self.explosion_jugador_tick <= 2 {
                     &jugador_explosion_1
                 } else {
                     &jugador_explosion_2
@@ -305,7 +301,7 @@ impl EstadoJuego {
                     let tx = origen_x + dx;
                     if ty < ALTO && tx < ANCHO && c == '1' {
                         // Si está explotando, usamos el ID 6
-                        tablero_estados[ty][tx] = if estado.explosion_jugador_tick > 0 {
+                        tablero_estados[ty][tx] = if self.explosion_jugador_tick > 0 {
                             6
                         } else {
                             1
@@ -316,7 +312,7 @@ impl EstadoJuego {
         }
 
         // Estampar proyectiles
-        for p in estado.proyectiles.iter() {
+        for p in self.proyectiles.iter() {
             for (dy, fila) in proyectil_1.iter().enumerate() {
                 for (dx, c) in fila.chars().enumerate() {
                     let ty = p.y + dy;
@@ -386,12 +382,115 @@ impl EstadoJuego {
                 if hubo_colision {
                     proyectil.activo = false; // El proyectil desaparece
                     enemigo.explosion_tick = 1; // ¡Inicia la animación de explosión!
-                    // Ya NO ponemos enemigo.activo = false aquí
                 }
             }
         }
 
         // Limpiamos los proyectiles inactivos, pero NO los enemigos todavía
         self.proyectiles.retain(|p| p.activo);
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────
+//  Implementación del trait Juego: conecta el estado con el bucle
+//  genérico definido en `juego.rs`.
+// ──────────────────────────────────────────────────────────────────────
+impl Juego for EstadoJuego {
+    fn nombre(&self) -> &str {
+        "Galaga"
+    }
+
+    fn instrucciones(&self) -> &str {
+        "Flechas mover | C disparar | Q salir"
+    }
+
+    fn procesar_input(&mut self, key: KeyCode) {
+        // Durante la animación de explosión del jugador solo permitimos salir.
+        if self.explosion_jugador_tick > 0 {
+            if key == KeyCode::Char('q') {
+                self.salir = true;
+            }
+            return;
+        }
+
+        match key {
+            KeyCode::Char('q') => self.salir = true,
+            KeyCode::Char('c') => self.disparar(),
+            KeyCode::Char('v') => {} // botón de acción 2 (sin asignar)
+            KeyCode::Char('x') => {} // botón de acción 3 (sin asignar)
+            KeyCode::Up => self.py = self.py.saturating_sub(1),
+            KeyCode::Down => {
+                if self.py < ALTO - 1 {
+                    self.py += 1;
+                }
+            }
+            KeyCode::Left => self.px = self.px.saturating_sub(1),
+            KeyCode::Right => {
+                if self.px < ANCHO - 1 {
+                    self.px += 1;
+                }
+            }
+            _ => {}
+        }
+    }
+
+    fn actualizar(&mut self, tick: u32) {
+        if tick % 6 == 0 {
+            self.actualizar_proyectiles();
+            self.actualizar_enemigos();
+            self.verificar_colision_jugador();
+            self.verificar_colisiones();
+            self.actualizar_explosiones();
+        }
+        if tick % 3 == 0 {
+            // ← más lento que los proyectiles
+            self.actualizar_estrellas();
+        }
+    }
+
+    fn renderizar(&self, stdout: &mut io::Stdout) {
+        // Construir buffer de render desde el estado actual.
+        let mut tablero_estados: [[u8; ANCHO]; ALTO] = [[0u8; ANCHO]; ALTO];
+        self.galaga(&mut tablero_estados, self.px, self.py);
+
+        print!("\x1B[2J\x1B[1;1H");
+        for y in 0..ALTO {
+            for x in 0..ANCHO {
+                // Calcula qué columna del mundo corresponde a esta celda
+                let x_mundo = (x + self.offset) % ANCHO;
+
+                let hay_estrella = self
+                    .estrellas
+                    .iter()
+                    .any(|&(ex, ey)| ex == x_mundo && ey == y);
+                match tablero_estados[y][x] {
+                    1 => print!("@   "),
+                    2 => print!(">   "),
+                    3 => print!("#   "),
+                    _ => {
+                        if hay_estrella {
+                            print!("*   ");
+                        } else {
+                            print!("    ");
+                        }
+                    }
+                }
+            }
+            println!();
+        }
+        if self.jugador_activo {
+            print!(
+                "Vidas: {} | {} | Q salir   ",
+                self.vidas,
+                self.instrucciones()
+            );
+        } else {
+            print!("GAME OVER - Pulsa Q para salir                 ");
+        }
+        stdout.flush().unwrap();
+    }
+
+    fn esta_activo(&self) -> bool {
+        !self.salir
     }
 }
