@@ -1,19 +1,3 @@
-//! Conway's Game of Life — versión interactiva.
-//!
-//! Controles:
-//! - **Flechas**: mover el cursor por el tablero.
-//! - **C**: colocar una célula viva (`#`) en la posición del cursor.
-//! - **X**: eliminar la célula en la posición del cursor.
-//! - **V**: alternar entre **modo Edición** y **modo Animación**.
-//!           - En modo Edición, el usuario pinta células manualmente y la
-//!             simulación está pausada.
-//!           - En modo Animación, las reglas de Conway se aplican
-//!             automáticamente (~5 generaciones/seg).
-//! - **Q**: salir al menú principal.
-//!
-//! Nota: el cursor puede moverse libremente en ambos modos, pero las
-//! teclas `C` y `X` solo tienen efecto en modo Edición.
-
 use super::juego::{ALTO, ANCHO, Juego};
 use crossterm::event::KeyCode;
 use std::io::{self, Write};
@@ -64,7 +48,6 @@ impl EstadoConway {
     }
 
     /// Cuenta los vecinos vivos de la celda `(x, y)` usando vecindad de
-    /// Moore (8 vecinos) con bordes finitos (sin wrap-around).
     fn contar_vecinos(&self, x: usize, y: usize) -> u8 {
         let mut contador = 0u8;
         for dy in -1i32..=1 {
@@ -113,9 +96,6 @@ impl EstadoConway {
     }
 }
 
-// ──────────────────────────────────────────────────────────────────────
-//  Implementación del trait Juego.
-// ──────────────────────────────────────────────────────────────────────
 impl Juego for EstadoConway {
     fn nombre(&self) -> &str {
         "Conway's Game of Life"
@@ -127,10 +107,10 @@ impl Juego for EstadoConway {
 
     fn procesar_input(&mut self, key: KeyCode) {
         match key {
-            // ── Salir ────────────────────────────────────────────
+            //Salir
             KeyCode::Char('q') => self.salir = true,
 
-            // ── Alternar modo Edición ↔ Animación ────────────────
+            // Alternar modo Edición/Animación
             KeyCode::Char('v') => {
                 self.modo = match self.modo {
                     ModoConway::Edicion => ModoConway::Animacion,
@@ -138,21 +118,21 @@ impl Juego for EstadoConway {
                 };
             }
 
-            // ── Colocar célula (solo en Edición) ─────────────────
+            // Colocar célula (solo en Edición)
             KeyCode::Char('c') => {
                 if self.modo == ModoConway::Edicion {
                     self.matriz[self.cursor_y][self.cursor_x] = 1;
                 }
             }
 
-            // ── Eliminar célula (solo en Edición) ────────────────
+            //Eliminar célula (solo en Edición)
             KeyCode::Char('x') => {
                 if self.modo == ModoConway::Edicion {
                     self.matriz[self.cursor_y][self.cursor_x] = 0;
                 }
             }
 
-            // ── Movimiento del cursor (válido en ambos modos) ────
+            //Movimiento del cursor
             KeyCode::Up => {
                 if self.cursor_y > 0 {
                     self.cursor_y -= 1;
@@ -179,8 +159,8 @@ impl Juego for EstadoConway {
     }
 
     fn actualizar(&mut self, tick: u32) {
-        // En modo Animación, avanzamos una generación cada 6 ticks (~200ms
-        // a 30 FPS => ~5 generaciones/segundo).
+        //
+        //30 FPS => ~5 generaciones/segundo).
         if self.modo == ModoConway::Animacion && tick % 6 == 0 {
             self.paso_simulacion();
         }
@@ -197,14 +177,14 @@ impl Juego for EstadoConway {
                 if x == self.cursor_x && y == self.cursor_y {
                     // Celda bajo el cursor: usamos corchetes para destacarla.
                     if viva {
-                        print!("[#]");
+                        print!("[# ]");
                     } else {
-                        print!("[ ]");
+                        print!("[  ]");
                     }
                 } else if viva {
-                    print!(" # ");
+                    print!(" #  ");
                 } else {
-                    print!(" . ");
+                    print!(" .  ");
                 }
             }
             println!();

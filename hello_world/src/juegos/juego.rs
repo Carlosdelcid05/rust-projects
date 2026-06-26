@@ -19,7 +19,7 @@ use std::io;
 use std::time::Duration;
 
 /// Ancho estándar del tablero. Compartido por todos los juegos.
-pub const ANCHO: usize = 24;
+pub const ANCHO: usize = 47;
 /// Alto estándar del tablero. Compartido por todos los juegos.
 pub const ALTO: usize = 24;
 

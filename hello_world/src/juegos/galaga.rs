@@ -1,9 +1,3 @@
-//! Galaga — juego de naves.
-//!
-//! Toda la lógica de colisiones, explosiones, proyectiles y enemigos
-//! se mantiene intacta. Lo único que se añade es la implementación del
-//! trait [`Juego`] para que el bucle principal genérico pueda ejecutarlo.
-
 use super::juego::{ALTO, ANCHO, Juego};
 use crossterm::event::KeyCode;
 use rand::RngExt;

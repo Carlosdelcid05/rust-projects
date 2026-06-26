@@ -43,9 +43,13 @@ impl OpcionMenu {
     /// Descripción breve de cada opción (se muestra bajo la etiqueta).
     pub fn descripcion(&self) -> &'static str {
         match self {
-            OpcionMenu::Galaga => "Defiende la nave de los enemigos.                    ",
-            OpcionMenu::Conway => "Simula células vivas. Edita y anima.  ",
-            OpcionMenu::Salir => "Cierra el programa.                                   ",
+            OpcionMenu::Galaga => {
+                "Defiende la nave de los enemigos.                                            "
+            }
+            OpcionMenu::Conway => "Simula células vivas. Edita y anima.                          ",
+            OpcionMenu::Salir => {
+                "Cierra el programa.                                                           "
+            }
         }
     }
 }
@@ -82,11 +86,17 @@ pub fn mostrar_menu() -> OpcionMenu {
     let mut seleccion = 0usize;
 
     loop {
-        // ── Dibujar menú ──────────────────────────────────────
+        //Dibujar menú
         print!("\x1B[2J\x1B[1;1H");
-        println!("========================================================================");
-        println!("               SELECCIONA UN JUEGO                                      ");
-        println!("========================================================================");
+        println!(
+            "================================================================================================"
+        );
+        println!(
+            "                                       SELECCIONA UN JUEGO                                      "
+        );
+        println!(
+            "================================================================================================"
+        );
         println!();
         for (i, op) in opciones.iter().enumerate() {
             if i == seleccion {
@@ -96,11 +106,16 @@ pub fn mostrar_menu() -> OpcionMenu {
             }
         }
         println!();
-        println!("  Flechas ↑↓ para navegar | Enter para seleccionar | Q salir            ");
-        println!("========================================================================");
+        println!();
+        println!(
+            "                    Flechas ↑↓ para navegar | Enter para seleccionar | Q salir                  "
+        );
+        println!(
+            "================================================================================================"
+        );
         stdout.flush().unwrap();
 
-        // ── Leer input ───────────────────────────────────────
+        //Leer input
         if poll(Duration::from_millis(100)).unwrap() {
             if let Event::Key(key) = event::read().unwrap() {
                 match key.code {
