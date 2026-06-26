@@ -4,14 +4,16 @@
 //! 1. Añadir una variante a [`OpcionMenu`].
 //! 2. Añadir su etiqueta en `OpcionMenu::etiqueta`.
 //! 3. Añadir el match en [`lanzador`] que construye e instancia el juego.
-
 use crossterm::{
     cursor,
     event::{self, Event, KeyCode, poll},
     execute, terminal,
 };
 use std::io::{self, Write};
+use std::iter::repeat;
 use std::time::Duration;
+
+use crate::juegos::juego::ANCHO;
 
 use super::conways::EstadoConway;
 use super::galaga::EstadoJuego;
@@ -43,13 +45,9 @@ impl OpcionMenu {
     /// Descripción breve de cada opción (se muestra bajo la etiqueta).
     pub fn descripcion(&self) -> &'static str {
         match self {
-            OpcionMenu::Galaga => {
-                "Defiende la nave de los enemigos.                                            "
-            }
-            OpcionMenu::Conway => "Simula células vivas. Edita y anima.                          ",
-            OpcionMenu::Salir => {
-                "Cierra el programa.                                                           "
-            }
+            OpcionMenu::Galaga => "Defiende la nave de los enemigos.",
+            OpcionMenu::Conway => "Simula células vivas. Edita y anima.",
+            OpcionMenu::Salir => "Cierra el programa.",
         }
     }
 }
@@ -84,35 +82,33 @@ pub fn mostrar_menu() -> OpcionMenu {
 
     let opciones = OpcionMenu::todas();
     let mut seleccion = 0usize;
+    let mensaje_1 = "SELECCIONA UN JUEGO";
+    let ancho_linea = ANCHO * 4;
 
     loop {
         //Dibujar menú
         print!("\x1B[2J\x1B[1;1H");
-        println!(
-            "================================================================================================"
-        );
-        println!(
-            "                                       SELECCIONA UN JUEGO                                      "
-        );
-        println!(
-            "================================================================================================"
-        );
+        println!("{}", repeat("=").take(ANCHO * 4).collect::<String>());
+
+        println!("{:^width$}", mensaje_1, width = ancho_linea);
+
+        println!("{}", repeat("=").take(ANCHO * 4).collect::<String>());
         println!();
         for (i, op) in opciones.iter().enumerate() {
-            if i == seleccion {
-                println!("  > [{}] {}  -  {}", i + 1, op.etiqueta(), op.descripcion());
+            let texto = if i == seleccion {
+                format!("  > [{}] {}  -  {}", i + 1, op.etiqueta(), op.descripcion())
             } else {
-                println!("    [{}] {}  -  {}", i + 1, op.etiqueta(), op.descripcion());
-            }
+                format!("    [{}] {}  -  {}", i + 1, op.etiqueta(), op.descripcion())
+            };
+            // Aseguramos que la línea ocupe todo el ancho, alineada a la izquierda con relleno derecho
+            println!("{:<width$}", texto, width = ancho_linea);
         }
         println!();
         println!();
-        println!(
-            "                    Flechas ↑↓ para navegar | Enter para seleccionar | Q salir                  "
-        );
-        println!(
-            "================================================================================================"
-        );
+
+        let instrucciones = "Flechas ↑↓ para navegar | Enter para seleccionar | Q salir";
+        println!("{:^width$}", instrucciones, width = ancho_linea);
+        println!("{}", repeat("=").take(ANCHO * 4).collect::<String>());
         stdout.flush().unwrap();
 
         //Leer input

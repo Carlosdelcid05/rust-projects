@@ -66,7 +66,7 @@ pub fn run<J: Juego>(mut juego: J) {
     let mut tick: u32 = 0;
 
     loop {
-        // ── Leer input SIN bloquear ──────────────────────────
+        //Leer input SIN bloquear
         if poll(Duration::from_millis(0)).unwrap() {
             if let Event::Key(key) = event::read().unwrap() {
                 juego.procesar_input(key.code);
@@ -79,15 +79,15 @@ pub fn run<J: Juego>(mut juego: J) {
         tick = tick.wrapping_add(1);
         juego.actualizar(tick);
 
-        // ── Renderizar ───────────────────────────────────────
+        // Renderizar
         execute!(stdout, cursor::MoveTo(0, 0)).unwrap();
         juego.renderizar(&mut stdout);
 
-        // ── Controlar FPS (~30) ──────────────────────────────
+        //Controlar FPS (~30)
         std::thread::sleep(Duration::from_millis(1000 / 30));
     }
 
-    // ── Restaurar terminal al salir ──────────────────────────
+    // Restaurar terminal al salir
     terminal::disable_raw_mode().unwrap();
     execute!(stdout, cursor::Show).unwrap();
 }

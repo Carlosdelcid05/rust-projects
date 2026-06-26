@@ -25,6 +25,7 @@ pub struct EstadoJuego {
     pub proyectiles: Vec<Proyectil>,
     pub enemigos: Vec<Enemigo>,
     pub estrellas: Vec<(usize, usize)>,
+    pub estrellas_2: Vec<(usize, usize)>,
     pub offset: usize,
     pub vidas: u8,
     pub jugador_activo: bool,
@@ -38,16 +39,22 @@ impl EstadoJuego {
     pub fn new() -> Self {
         // Genera estrellas en posiciones aleatorias al inicio
         let mut estrellas = Vec::new();
+        let mut estrellas_2 = Vec::new();
 
         let mut rng = rand::rng();
-        for _ in 0..40 {
+        for _ in 0..20 {
             let x = rng.random_range(0..ANCHO);
             let y = rng.random_range(0..ALTO);
             estrellas.push((x, y));
         }
+        for _ in 0..20 {
+            let x = rng.random_range(0..ANCHO);
+            let y = rng.random_range(0..ALTO);
+            estrellas_2.push((x, y));
+        }
         let enemigos = vec![
             Enemigo {
-                x: 18,
+                x: ANCHO - 7,
                 y: 4,
                 activo: true,
                 tipo: 1,
@@ -56,7 +63,7 @@ impl EstadoJuego {
                 explosion_tick: 0,
             },
             Enemigo {
-                x: 18,
+                x: ANCHO - 7,
                 y: 10,
                 activo: true,
                 tipo: 1,
@@ -65,7 +72,7 @@ impl EstadoJuego {
                 explosion_tick: 0,
             },
             Enemigo {
-                x: 18,
+                x: ANCHO - 7,
                 y: 16,
                 activo: true,
                 tipo: 1,
@@ -81,6 +88,7 @@ impl EstadoJuego {
             proyectiles: Vec::new(),
             enemigos,
             estrellas,
+            estrellas_2,
             offset: 0,
             vidas: 3,
             jugador_activo: true,
@@ -184,7 +192,7 @@ impl EstadoJuego {
 
     // Llama esto en el loop igual que actualizar_proyectiles()
     pub fn actualizar_estrellas(&mut self) {
-        self.offset = (self.offset + 1) % ANCHO;
+        self.offset = ((self.offset + 1) % ANCHO);
     }
 
     pub fn actualizar_enemigos(&mut self) {
@@ -452,19 +460,28 @@ impl Juego for EstadoJuego {
             for x in 0..ANCHO {
                 // Calcula qué columna del mundo corresponde a esta celda
                 let x_mundo = (x + self.offset) % ANCHO;
+                let x_mundo_2 = (x + self.offset / 2) % (ANCHO / 2);
 
                 let hay_estrella = self
                     .estrellas
                     .iter()
                     .any(|&(ex, ey)| ex == x_mundo && ey == y);
+                let hay_estrella_2 = self
+                    .estrellas_2
+                    .iter()
+                    .any(|&(ex, ey)| ex == x_mundo_2 && ey == y);
                 match tablero_estados[y][x] {
                     1 => print!("@   "),
                     2 => print!(">   "),
                     3 => print!("#   "),
                     _ => {
-                        if hay_estrella {
+                        if (hay_estrella && !hay_estrella_2) || (hay_estrella && hay_estrella_2) {
                             print!("*   ");
-                        } else {
+                        }
+                        if hay_estrella_2 && !hay_estrella {
+                            print!(".   ");
+                        }
+                        if !hay_estrella && !hay_estrella_2 {
                             print!("    ");
                         }
                     }
