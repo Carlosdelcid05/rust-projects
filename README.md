@@ -1,17 +1,17 @@
-# 🦀 rust-projects
+# rust-projects
 
-Repositorio de aprendizaje de **Rust**. Una colección de pequeños proyectos y juegos de terminal construidos mientras aprender el lenguaje.
+Repositorio de aprendizaje de **Rust**. Una colección de pequeños proyectos y juegos de terminal construidos mientras aprendo el lenguaje.
 
 > A collection of small projects and terminal games built while learning **Rust**.
 
-## 📂 Contenido
+## Contenido
 
 - **hello_world/** — proyecto principal que reúne una colección de juegos de terminal:
-  - 🧬 **Conway** — El juego de la vida
-  - 👾 **Galaga** — shooter clásico en terminal
-  - 🎮 **Menu** — menú para elegir entre los juegos
+  - **Conway** — El juego de la vida
+  - **Galaga** — shooter clásico en terminal
+  - **Menu** — menú para elegir entre los juegos
 
-## 🚀 Requisitos y uso
+## Requisitos y uso
 
 Necesitas [Rust y Cargo](https://www.rust-lang.org/tools/install).
 
@@ -21,7 +21,7 @@ cd rust-projects/hello_world
 cargo run
 ```
 
-## 📄 Licencia
+## Licencia
 
 Distribuido bajo la licencia **GPL-3.0**. Ver [LICENSE](LICENSE).
 
